@@ -1,0 +1,61 @@
+import { IdeAdapter, SkillErrorCode } from '../types';
+import { SkillError } from '../errors';
+import { KiroAdapter } from './KiroAdapter';
+import { CursorAdapter } from './CursorAdapter';
+import { CopilotAdapter } from './CopilotAdapter';
+import { JetBrainsAdapter } from './JetBrainsAdapter';
+import { AntigravityAdapter } from './AntigravityAdapter';
+
+/**
+ * Detects which IDE adapters are applicable for a given workspace.
+ */
+export class IdeDetector {
+  private readonly allAdapters: IdeAdapter[] = [
+    new KiroAdapter(),
+    new CursorAdapter(),
+    new CopilotAdapter(),
+    new JetBrainsAdapter(),
+    new AntigravityAdapter(),
+  ];
+
+  /**
+   * Returns the list of IDE adapters to use for the given workspace.
+   *
+   * @param workspaceRoot - Absolute path to the workspace root directory
+   * @param forceIde - If provided, only return the adapter matching this IDE name (case-insensitive)
+   * @returns Array of applicable IDE adapters
+   * @throws SkillError(IDE_NOT_SUPPORTED) if forceIde is provided but not found
+   */
+  async detectAll(workspaceRoot: string, forceIde?: string): Promise<IdeAdapter[]> {
+    if (forceIde !== undefined) {
+      const normalized = forceIde.toLowerCase();
+      const adapter = this.allAdapters.find((a) => a.name.toLowerCase() === normalized);
+
+      if (!adapter) {
+        throw new SkillError(
+          SkillErrorCode.IDE_NOT_SUPPORTED,
+          `IDE '${forceIde}' is not supported. Supported IDEs: ${this.allAdapters.map((a) => a.name).join(', ')}`
+        );
+      }
+
+      return [adapter];
+    }
+
+    // Detect which IDEs are present in the workspace
+    const detected: IdeAdapter[] = [];
+
+    for (const adapter of this.allAdapters) {
+      const exists = await adapter.detect(workspaceRoot);
+      if (exists) {
+        detected.push(adapter);
+      }
+    }
+
+    // Fallback: if none detected, return all adapters (install everywhere)
+    if (detected.length === 0) {
+      return [...this.allAdapters];
+    }
+
+    return detected;
+  }
+}
