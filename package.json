@@ -1,6 +1,6 @@
 {
   "name": "komerce-skill",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "AI Skills Registry CLI tool for managing AI assistant skills across multiple IDEs",
   "main": "dist/cli.js",
   "bin": {
