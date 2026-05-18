@@ -1,0 +1,118 @@
+name: Publish to npm
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "package.json"
+      - "tsconfig.json"
+      - ".github/workflows/publish.yml"
+
+jobs:
+  publish:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test -- --passWithNoTests
+
+      - name: Build
+        run: npm run build
+
+      # ---------------------------------------------------------------
+      # Auto version bump berdasarkan commit message (conventional commits)
+      #
+      #   feat: ...          → minor  (1.0.0 → 1.1.0)
+      #   fix: / chore: ...  → patch  (1.0.0 → 1.0.1)
+      #   BREAKING CHANGE    → major  (1.0.0 → 2.0.0)
+      #
+      # Kalau commit message tidak match pattern apapun → default patch
+      # ---------------------------------------------------------------
+      - name: Determine version bump
+        id: bump
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Commit message: ${COMMIT_MSG}"
+
+          if echo "$COMMIT_MSG" | grep -iq "BREAKING CHANGE"; then
+            echo "bump=major" >> $GITHUB_OUTPUT
+            echo "🔴 BREAKING CHANGE detected → major bump"
+          elif echo "$COMMIT_MSG" | grep -iqP "^feat(\(.+\))?:"; then
+            echo "bump=minor" >> $GITHUB_OUTPUT
+            echo "🟡 feat: detected → minor bump"
+          elif echo "$COMMIT_MSG" | grep -iqP "^(fix|chore|refactor|perf|docs|style|test|build|ci)(\(.+\))?:"; then
+            echo "bump=patch" >> $GITHUB_OUTPUT
+            echo "🟢 fix/chore: detected → patch bump"
+          else
+            echo "bump=patch" >> $GITHUB_OUTPUT
+            echo "⚪ No conventional prefix → default patch bump"
+          fi
+
+      - name: Bump version
+        id: version
+        run: |
+          # Bump tanpa membuat git tag (kita buat sendiri nanti)
+          NEW_VERSION=$(npm version ${{ steps.bump.outputs.bump }} --no-git-tag-version)
+          echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+          echo "📦 New version: ${NEW_VERSION}"
+
+      - name: Check if version already published
+        id: check
+        run: |
+          PKG_NAME=$(node -p "require('./package.json').name")
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          echo "pkg_name=${PKG_NAME}" >> $GITHUB_OUTPUT
+
+          if npm view "${PKG_NAME}@${PKG_VERSION}" version 2>/dev/null; then
+            echo "already_published=true" >> $GITHUB_OUTPUT
+            echo "⏭️  ${PKG_NAME}@${PKG_VERSION} already published."
+          else
+            echo "already_published=false" >> $GITHUB_OUTPUT
+            echo "🆕 ${PKG_NAME}@${PKG_VERSION} ready to publish."
+          fi
+
+      - name: Authenticate to npm
+        if: steps.check.outputs.already_published == 'false'
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "Verifying npm auth..."
+          npm whoami
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish
+        if: steps.check.outputs.already_published == 'false'
+        run: |
+          echo "🚀 Publishing ${{ steps.check.outputs.pkg_name }}@${{ steps.version.outputs.new_version }}..."
+          npm publish --access public
+          echo "✅ Published!"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Commit version bump & create tag
+        if: steps.check.outputs.already_published == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore(release): ${{ steps.version.outputs.new_version }} [skip ci]"
+          git tag "${{ steps.version.outputs.new_version }}"
+          git push origin main --tags

@@ -6,13 +6,29 @@ import { namespaceToFilename } from './adapterUtils';
 /**
  * IDE adapter for GitHub Copilot.
  * Installs skill instructions into `.github/instructions/`.
+ *
+ * Detection checks for Copilot-specific indicators within the `.github/`
+ * directory to avoid false positives from repos that only use GitHub Actions.
  */
 export class CopilotAdapter implements IdeAdapter {
   readonly name = 'copilot';
   readonly configDir = '.github';
 
   async detect(workspaceRoot: string): Promise<boolean> {
-    return fs.existsSync(path.join(workspaceRoot, '.github'));
+    const githubDir = path.join(workspaceRoot, '.github');
+    if (!fs.existsSync(githubDir)) {
+      return false;
+    }
+
+    // Check for Copilot-specific indicators:
+    // 1. .github/copilot-instructions.md (repository-wide instructions)
+    // 2. .github/instructions/ directory (path-specific instructions)
+    // 3. .github/copilot/ directory (Copilot config)
+    return (
+      fs.existsSync(path.join(githubDir, 'copilot-instructions.md')) ||
+      fs.existsSync(path.join(githubDir, 'instructions')) ||
+      fs.existsSync(path.join(githubDir, 'copilot'))
+    );
   }
 
   async install(skill: InstalledSkill, workspaceRoot: string): Promise<void> {

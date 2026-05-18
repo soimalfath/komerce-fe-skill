@@ -5,6 +5,12 @@ import { CursorAdapter } from './CursorAdapter';
 import { CopilotAdapter } from './CopilotAdapter';
 import { JetBrainsAdapter } from './JetBrainsAdapter';
 import { AntigravityAdapter } from './AntigravityAdapter';
+import { WindsurfAdapter } from './WindsurfAdapter';
+import { ClaudeCodeAdapter } from './ClaudeCodeAdapter';
+import { ClineAdapter } from './ClineAdapter';
+import { GeminiCliAdapter } from './GeminiCliAdapter';
+import { AugmentAdapter } from './AugmentAdapter';
+import { AiderAdapter } from './AiderAdapter';
 
 /**
  * Detects which IDE adapters are applicable for a given workspace.
@@ -16,6 +22,12 @@ export class IdeDetector {
     new CopilotAdapter(),
     new JetBrainsAdapter(),
     new AntigravityAdapter(),
+    new WindsurfAdapter(),
+    new ClaudeCodeAdapter(),
+    new ClineAdapter(),
+    new GeminiCliAdapter(),
+    new AugmentAdapter(),
+    new AiderAdapter(),
   ];
 
   /**

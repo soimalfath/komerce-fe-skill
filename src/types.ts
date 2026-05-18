@@ -11,7 +11,19 @@
  * Supported IDE targets for skill installation.
  * 'all' means the skill supports every IDE.
  */
-export type IdeTarget = 'kiro' | 'cursor' | 'copilot' | 'jetbrains' | 'antigravity' | 'all';
+export type IdeTarget =
+  | 'kiro'
+  | 'cursor'
+  | 'copilot'
+  | 'jetbrains'
+  | 'antigravity'
+  | 'windsurf'
+  | 'claude-code'
+  | 'cline'
+  | 'gemini-cli'
+  | 'augment'
+  | 'aider'
+  | 'all';
 
 // ---------------------------------------------------------------------------
 // Skill Manifest
