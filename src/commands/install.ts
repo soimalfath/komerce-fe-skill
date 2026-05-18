@@ -39,7 +39,10 @@ export async function installCommand(
 
   if (successfulInstalls.length > 0) {
     try {
-      const adapters = await context.ideDetector.detectAll(context.workspaceRoot, options.ide);
+      const adapters = await context.ideDetector.detectAll(
+        context.workspaceRoot,
+        options.ide
+      );
 
       for (const adapter of adapters) {
         for (const result of successfulInstalls) {
@@ -47,6 +50,7 @@ export async function installCommand(
           if (skill) {
             try {
               await adapter.install(skill, context.workspaceRoot);
+              console.log(`  → ${adapter.name}: config generated`);
             } catch (err) {
               // Non-fatal: log warning but continue
               const errorMessage = err instanceof Error ? err.message : String(err);
