@@ -25,7 +25,14 @@
     "kiro",
     "cursor",
     "copilot",
-    "jetbrains"
+    "jetbrains",
+    "antigravity",
+    "windsurf",
+    "claude-code",
+    "cline",
+    "gemini-cli",
+    "augment",
+    "aider"
   ],
   "author": "komerce-team",
   "license": "MIT",

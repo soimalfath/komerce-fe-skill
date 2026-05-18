@@ -42,7 +42,7 @@ program
 program
   .command('install <namespaces...>')
   .description('Install one or more skills from the registry')
-  .option('--ide <ide>', 'Force installation for a specific IDE (kiro, cursor, copilot, jetbrains, antigravity)')
+  .option('--ide <ide>', 'Force installation for a specific IDE (kiro, cursor, copilot, jetbrains, antigravity, windsurf, claude-code, cline, gemini-cli, augment, aider)')
   .action(async (namespaces: string[], options: { ide?: string }) => {
     await installCommand(namespaces, options, context);
   });
