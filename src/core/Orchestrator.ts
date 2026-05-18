@@ -75,7 +75,10 @@ export class Orchestrator {
     const successful = results.filter((r) => r.success);
     if (successful.length > 0) {
       try {
-        const adapters = await this.ideDetector.detectAll(this.workspaceRoot, options.ide);
+        const adapters = await this.ideDetector.detectAll(
+          this.workspaceRoot,
+          options.ide
+        );
 
         for (const adapter of adapters) {
           for (const result of successful) {
